@@ -76,8 +76,7 @@ local vars = {
 		{"Thirdperson D.", 13},  	   	    	   
 		{"Bunnyhop", 1, 1},  	   
 		{"Chatspam", 0, 1}, 	
-		{"Autostrafe", 0, 1},
-		{"Autostrafe WIP", 0, 1}, 		
+		{"Autostrafe", 0, 1}, 		
 	},  	   
 	["Aimbot"] = {  	   
 		{"Enabled", 0, 1},  	   
@@ -85,8 +84,8 @@ local vars = {
 		{"Aim on Mouse", 0, 1},  	   
 		{"Target Method", 1, 3, "0 = Normal | 1 = Nextshot | 2 = Distance | 3 = Health"},  	   
 		{"Autoshoot", 1, 1},  	   
-		{"NoSpread", 1, 1},
-		{"Autowall", 1, 1},  	   		
+		{"NoSpread", 1, 1}, 
+		{"Autowall", 0, 1},
 		{"Target Team", 1, 1},  	   
 		{"Target Friends", 0, 1},  	   
 		{"Body Aim", 0, 1},  	   
@@ -112,14 +111,9 @@ local vars = {
 		{"Min X", 839},  	   
 		{"Min Y", 45},  	   
 		{"Max X", -270},  	   
-		{"Max Y", 30},  	   	   
-	},
-	["New Anti Aim WIP"] = {  	   
-		{"Antiaim", 0, 1},  
-		{"", ""},		
-		{"Pitch", 0, 2},  	   
-		{"Yaw", 0, 4},  	   	   	   
-	},  	
+		{"Max Y", 30},  	   
+		  	   
+	},  	   
 	["Menu"] = {  	   
 		{"Autism", 0, 1},  	   
 		{"Pos X", 1300},  	   
@@ -146,7 +140,7 @@ local vars = {
 		{"Crosshair G", 0, 255},  	   
 		{"Crosshair B", 0, 255},
 		{"", ""},
-		{"Watermark BKN", 0, 0},
+		{"Watermark", 0, 0},
 	},  	   
 };  	   
   	   
@@ -192,7 +186,51 @@ local function loadconfig()
 			end  	   
 		end  	   
 	end  	   
-end  	   
+end  
+
+local trace_walls = bit.bor(CONTENTS_TESTFOGVOLUME, CONTENTS_EMPTY, CONTENTS_MONSTER, CONTENTS_HITBOX);
+local NoPenetration = {[MAT_SLOSH] = true};
+local PenMod = {[MAT_SAND] = 0.5, [MAT_DIRT] = 0.8, [MAT_METAL] = 1.1, [MAT_TILE] = 0.9, [MAT_WOOD] = 1.2};
+local trace_normal = bit.bor(CONTENTS_SOLID, CONTENTS_OPAQUE, CONTENTS_MOVEABLE, CONTENTS_DEBRIS, CONTENTS_MONSTER, CONTENTS_HITBOX, 402653442, CONTENTS_WATER);
+
+local function fasAutowall(wep, startPos, aimPos, ply)
+    local traces = {};
+    local me = me;
+    local traceResults = {};
+    local dir = (aimPos - startPos):GetNormalized();
+    traces[1] = { start = startPos, filter = me, mask = trace_normal, endpos = aimPos, };
+    traceResults[1] = util.TraceLine(traces[1]);
+    if(NoPenetration[traceResults[1].MatType]) then return false; end
+    if((-dir):DotProduct(traceResults[1].HitNormal) <= .26) then return false; end
+    traces[2] = { start = traceResults[1].HitPos, endpos = traceResults[1].HitPos + dir * wep.PenStr * (PenMod[traceResults[1].MatType] || 1) * wep.PenMod, filter = me, mask = trace_walls, };
+    traceResults[2] = util.TraceLine(traces[2]);
+    traces[3] = { start = traceResults[2].HitPos, endpos = traceResults[2].HitPos + dir * .1, filter = me, mask = trace_normal, };
+    traceResults [3] = util.TraceLine(traces[3]);
+    traces[4] = { start = traceResults[2].HitPos, endpos = aimPos, filter = me, mask = MASK_SHOT, };
+    traceResults[4] = util.TraceLine(traces[4]);
+    if(traceResults[4].Entity != ply) then return false; end
+    return(!traceResults[3].Hit);
+end
+
+local function IsVisible(ply, pos)
+	local trace = {
+		start = me:EyePos(),
+		endpos = pos,
+		filter = {ply, me},
+		mask = MASK_SHOT,
+	};
+
+	if (util.TraceLine(trace).Fraction == 1 ) then
+		return true;
+	else
+		local wep = me:GetActiveWeapon();
+		if(wep && wep:IsValid() && wep.PenStr) then
+			return fasAutowall(wep, trace.start, trace.endpos, ply);
+		end
+	end
+
+	return false;
+end	   
   	   
 local drawtext;  	   
 local mh;  	   
@@ -408,25 +446,19 @@ end
 
 --WaterMark
 
-local watermark = CreateClientConVar("watermark", 1);
-
-if (gInt("Menu", "Watermark") == 1) then  	   
-	hook.Add( "HUDPaint", "WaterMark", function()
-		if(watermark:GetBool()) then
-		rainbow = {}
-		rainbow.R = math.sin(CurTime() * 4) * 127 + 128
-		rainbow.G = math.sin(CurTime() * 4 + 2) * 127 + 128
-		rainbow.B = math.sin(CurTime() * 4 + 4) * 127 + 128
-
-		local h = ScrH() / 1
-		local w = ScrW() / 5
+hook.Add( "HUDPaint", "WaterMark", function()
+	rainbow = {}
+	rainbow.R = math.sin(CurTime() * 4) * 127 + 128
+	rainbow.G = math.sin(CurTime() * 4 + 2) * 127 + 128
+	rainbow.B = math.sin(CurTime() * 4 + 4) * 127 + 128
+	
+	local h = ScrH() / 1
+	local w = ScrW() / 5
  
-		draw.SimpleText("SuccMcFucc Garry's Mod", "Watermark", 20, 30, Color(rainbow.R, rainbow.G, rainbow.B), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
-		draw.SimpleText(TimeString, "Watermark", 20, 45, Color(240, 157, 5), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+	draw.SimpleText("SuccMcFucc Garry's Mod", "Watermark", 20, 30, Color(rainbow.R, rainbow.G, rainbow.B), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+	draw.SimpleText(TimeString, "Watermark", 20, 45, Color(240, 157, 5), TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM)
+end)
 
-		end
-	end)
-end
 
 --hook.Add( "HUDPaint", "WaterMark", function()
 --	if(watermark:GetBool()) then
@@ -647,86 +679,14 @@ local function Bunnyhop(ucmd)
 	end  	   
 end  
 
---local function Autostrafe(ucmd)  	   
-	--if(!me:IsOnGround() && ucmd:KeyDown(IN_JUMP)) then
-		--ucmd:RemoveKey(IN_JUMP);
---
-	--	if (!gBool("Misc.", "Autostrafe")) then
-		--	if(ucmd:GetMouseX() > 1 || ucmd:GetMouseX() < -1) then
-			--	ucmd:SetSideMove(ucmd:GetMouseX() > 1 && 400 || -400);
-		--	else
-			--	ucmd:SetForwardMove(5850 / me:GetVelocity():Length2D());
-				--ucmd:SetSideMove((ucmd:CommandNumber() % 2 == 0) && -400 || 400);
-			--end
---		end
---	end
---end
-
 local function Autostrafe(ucmd)  	   
-	if (!gBool("Misc.", "Autostrafe") == 1) then
+	if (!gBool("Misc.", "Autostrafe")) then return; end  	   
 		if ucmd:GetMouseX() > 0 then
 			ucmd:SetSideMove(10^4)
 		elseif 0 > ucmd:GetMouseX() then
 			ucmd:SetSideMove(-10^4)
 		end
-	end
-end
-
-local trace_walls = bit.bor(CONTENTS_TESTFOGVOLUME, CONTENTS_EMPTY, CONTENTS_MONSTER, CONTENTS_HITBOX);
-local NoPenetration = {[MAT_SLOSH] = true};
-local PenMod = {[MAT_SAND] = 0.5, [MAT_DIRT] = 0.8, [MAT_METAL] = 1.1, [MAT_TILE] = 0.9, [MAT_WOOD] = 1.2};
-local trace_normal = bit.bor(CONTENTS_SOLID, CONTENTS_OPAQUE, CONTENTS_MOVEABLE, CONTENTS_DEBRIS, CONTENTS_MONSTER, CONTENTS_HITBOX, 402653442, CONTENTS_WATER);
-
-local function fasAutowall(wep, startPos, aimPos, ply)
-	if (!gBool("Aimbot", "Autowall")) then return; end
-    local traces = {};
-    local me = me;
-    local traceResults = {};
-    local dir = (aimPos - startPos):GetNormalized();
-    traces[1] = { start = startPos, filter = me, mask = trace_normal, endpos = aimPos, };
-    traceResults[1] = util.TraceLine(traces[1]);
-    if(NoPenetration[traceResults[1].MatType]) then return false; end
-    if((-dir):DotProduct(traceResults[1].HitNormal) <= .26) then return false; end
-    traces[2] = { start = traceResults[1].HitPos, endpos = traceResults[1].HitPos + dir * wep.PenStr * (PenMod[traceResults[1].MatType] || 1) * wep.PenMod, filter = me, mask = trace_walls, };
-    traceResults[2] = util.TraceLine(traces[2]);
-    traces[3] = { start = traceResults[2].HitPos, endpos = traceResults[2].HitPos + dir * .1, filter = me, mask = trace_normal, };
-    traceResults [3] = util.TraceLine(traces[3]);
-    traces[4] = { start = traceResults[2].HitPos, endpos = aimPos, filter = me, mask = MASK_SHOT, };
-    traceResults[4] = util.TraceLine(traces[4]);
-    if(traceResults[4].Entity != ply) then return false; end
-    return(!traceResults[3].Hit);
-end
-
-local function IsVisible(ply, pos)
-	local trace = {
-		start = me:EyePos(),
-		endpos = pos,
-		filter = {ply, me},
-		mask = MASK_SHOT,
-	};
-
-	if (util.TraceLine(trace).Fraction == 1 ) then
-		return true;
-	else
-		local wep = me:GetActiveWeapon();
-		if(wep && wep:IsValid() && wep.PenStr) then
-			return fasAutowall(wep, trace.start, trace.endpos, ply);
-		end
-	end
-
-	return false;
-end
-
-local function GetX()
-	if (!gBool("Anti Aim", "AntiAim")) then return; end
-	
-	local pitch = ucmd:GetViewAngles().x;
-	
-	local x = gInt("Anti Aim", "Pitch");  	   
-	if( x == 1 ) then //lisp down  	   
-		pitch = 180;  	    	   
-	end  	   
-end    
+	end      
   	   
 local function FixMovement(ucmd, aa)  	   
 	local ang = Vector(cm.GetForwardMove(ucmd), cm.GetSideMove(ucmd), 0)  	   
@@ -1047,8 +1007,7 @@ function GAMEMODE:CreateMove(ucmd)
 	Triggerbot(ucmd);  	   
 	Aimbot(ucmd);  	   
 	Spinbot(ucmd);  	   
-	Antiaim(ucmd);
-	GetX(ucmd);	
+	Antiaim(ucmd);  	   
 end  	   
   	   
 function GAMEMODE:CalcView(p, o, a, f)  	   
